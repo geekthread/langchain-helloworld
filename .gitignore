@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Ignore environment variable files
+.env
+
+# Ignore .claude directory which may contain sensitive information or configuration files related to the Claude AI model.
+.claude/
