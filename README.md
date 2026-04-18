@@ -8,11 +8,12 @@ This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain c
 
 1. Prompts the user to enter a person's name
 2. Fetches their biography from Wikipedia via `WikipediaLoader`
-3. Passes the content through a GPT-4o-mini chain to generate a profile including:
-   - Background summary
-   - Relevant conversation topics
-   - Initial questions to learn more about the person
-   - Follow-up questions based on expected responses
+3. Fetches up to 5 Wikipedia documents and combines them for richer context
+4. Passes the combined content through a GPT-4o-mini chain to generate a formatted profile with markdown headings:
+   - **Background Summary** — short paragraph on the person's background and interests
+   - **Conversation Topics** — bullet list of relevant topics to discuss
+   - **Questions to Learn More** — bullet list of exploratory questions
+   - **Follow-Up Questions** — bullet list of follow-ups based on likely responses
 
 ## Prerequisites
 
@@ -40,7 +41,7 @@ This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain c
 uv run main.py
 ```
 
-The script will prompt you to enter a person's name, fetch their Wikipedia biography, and generate a structured profile using `gpt-4o-mini`.
+The script will prompt you to enter a person's name, fetch up to 5 Wikipedia articles for that topic, and generate a markdown-formatted profile using `gpt-4o-mini`. A preview of the raw Wikipedia content (first 2000 chars) is printed before the profile.
 
 ## Dependencies
 

@@ -24,9 +24,9 @@ load_dotenv()
 
 def load_wikipedia_info(topic: str) -> str:
     """Load a biography from Wikipedia given a topic string."""
-    loader = WikipediaLoader(query=topic, load_max_docs=2)
+    loader = WikipediaLoader(query=topic, load_max_docs=5)
     documents = loader.load()
-    return documents[0].page_content if documents else ""
+    return "\n\n".join(doc.page_content for doc in documents)
 
 def main():
     """Build and invoke a LangChain prompt→LLM chain for a given person biography."""
@@ -36,17 +36,30 @@ def main():
     # Uses LangChain's PromptTemplate to inject `information` at runtime.
     # The template asks the LLM to produce 14 structured sections about a person.
     prompt_template_str = """
-     Given the following information , about a personon {information}, please
-     provide:
-     1.  A short summary of the person's background and interests.
-     2.  A list of potential topics that would be relevant and interesting to discuss with this person.
-     3.  A list of questions that could be asked to learn more about this person's background and interests.
-     4.  A list of potential follow-up questions based on the person's responses to the initial questions.
+You are a helpful assistant. Using the information below about a person, produce a well-formatted profile with the following sections. Use markdown: a `##` heading for each section, and bullet points for lists.
+
+## Information
+{information}
+
+---
+
+## 1. Background Summary
+A short paragraph summarising the person's background and interests.
+
+## 2. Conversation Topics
+A bullet list of topics that would be relevant and interesting to discuss with this person.
+
+## 3. Questions to Learn More
+A bullet list of questions to explore the person's background and interests.
+
+## 4. Follow-Up Questions
+A bullet list of follow-up questions based on likely responses to the questions above.
     """
 
     # --- Load biography from Wikipedia ------------------------------------
     topic = input("Enter a person's name to look up: ")
     information = load_wikipedia_info(topic)
+    print(f"Loaded information about {topic} from Wikipedia:\n{information[:2000]}...")  # Print first 2000 chars
  
     # --- Build the chain --------------------------------------------------
     # PromptTemplate compiles the string template and validates input variables.
@@ -65,7 +78,7 @@ def main():
 
     # Invoke the chain; returns an AIMessage whose .content holds the text.
     response = chain.invoke({"information": information})
-    print(response)
+    print(response.content)
 
 if __name__ == "__main__":
     main()
