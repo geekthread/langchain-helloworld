@@ -20,7 +20,7 @@ from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WikipediaLoader
 
 # Load OPENAI_API_KEY (and any other vars) from .env into os.environ
-load_dotenv()
+load_dotenv(override=True)
 
 def load_wikipedia_info(topic: str) -> str:
     """Load a biography from Wikipedia given a topic string."""
@@ -28,15 +28,10 @@ def load_wikipedia_info(topic: str) -> str:
     documents = loader.load()
     return "\n\n".join(doc.page_content for doc in documents)
 
-def main():
-    """Build and invoke a LangChain prompt→LLM chain for a given person biography."""
-    print("Hello from langchain-helloworld!")
-
-    # --- Prompt template --------------------------------------------------
-    # Uses LangChain's PromptTemplate to inject `information` at runtime.
-    # The template asks the LLM to produce 14 structured sections about a person.
-    prompt_template_str = """
-You are a helpful assistant. Using the information below about a person, produce a well-formatted profile with the following sections. Use markdown: a `##` heading for each section, and bullet points for lists.
+PROMPT_TEMPLATE = """
+You are a helpful assistant. Using the information below about a person, produce a
+well-formatted profile with the following sections. Use markdown: a `##` heading for
+each section, and bullet points for lists.
 
 ## Information
 {information}
@@ -54,29 +49,23 @@ A bullet list of questions to explore the person's background and interests.
 
 ## 4. Follow-Up Questions
 A bullet list of follow-up questions based on likely responses to the questions above.
-    """
+"""
 
-    # --- Load biography from Wikipedia ------------------------------------
+
+def main():
+    print("Hello from langchain-helloworld!")
+
+    # 1. Get topic and load Wikipedia content
     topic = input("Enter a person's name to look up: ")
     information = load_wikipedia_info(topic)
-    print(f"Loaded information about {topic} from Wikipedia:\n{information[:2000]}...")  # Print first 2000 chars
- 
-    # --- Build the chain --------------------------------------------------
-    # PromptTemplate compiles the string template and validates input variables.
-    prompt_template = PromptTemplate(
-        input_variables=["information"],
-        template=prompt_template_str,
-    )
+    print(f"\n--- Wikipedia preview for '{topic}' ---\n{information[:2000]}...\n")
 
-    # ChatOpenAI wraps the OpenAI chat completions API.
-    # temperature=0.7 balances creativity vs. determinism (0 = deterministic, 1 = most random).
+    # 2. Build the LCEL chain: prompt → LLM
+    prompt = PromptTemplate(input_variables=["information"], template=PROMPT_TEMPLATE)
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+    chain = prompt | llm
 
-    # The `|` operator creates a LangChain Expression Language (LCEL) chain:
-    # prompt_template formats the input → llm generates the response.
-    chain = prompt_template | llm
-
-    # Invoke the chain; returns an AIMessage whose .content holds the text.
+    # 3. Invoke and print the formatted profile
     response = chain.invoke({"information": information})
     print(response.content)
 

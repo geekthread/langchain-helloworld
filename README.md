@@ -4,16 +4,17 @@ A starter project demonstrating how to use [LangChain](https://www.langchain.com
 
 ## Overview
 
-This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain chain that:
+This project builds a minimal LangChain pipeline structured in three clear steps:
 
-1. Prompts the user to enter a person's name
-2. Fetches their biography from Wikipedia via `WikipediaLoader`
-3. Fetches up to 5 Wikipedia documents and combines them for richer context
-4. Passes the combined content through a GPT-4o-mini chain to generate a formatted profile with markdown headings:
+1. **Load** — prompts the user for a name, fetches up to 5 Wikipedia articles, and combines them into a single context string
+2. **Build** — constructs an LCEL chain (`PromptTemplate | ChatOpenAI`) using a module-level prompt template (`PROMPT_TEMPLATE`)
+3. **Invoke** — runs the chain and prints a markdown-formatted profile with four sections:
    - **Background Summary** — short paragraph on the person's background and interests
    - **Conversation Topics** — bullet list of relevant topics to discuss
    - **Questions to Learn More** — bullet list of exploratory questions
    - **Follow-Up Questions** — bullet list of follow-ups based on likely responses
+
+A preview of the raw Wikipedia content (first 2000 chars) is printed before the profile.
 
 ## Prerequisites
 
@@ -41,7 +42,15 @@ This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain c
 uv run main.py
 ```
 
-The script will prompt you to enter a person's name, fetch up to 5 Wikipedia articles for that topic, and generate a markdown-formatted profile using `gpt-4o-mini`. A preview of the raw Wikipedia content (first 2000 chars) is printed before the profile.
+You will be prompted to enter a person's name. The script will then fetch Wikipedia content, print a preview, and output a structured markdown profile via `gpt-4o-mini`.
+
+## Code Structure
+
+| Component | Location | Purpose |
+|---|---|---|
+| `PROMPT_TEMPLATE` | `main.py` (module level) | Markdown prompt defining the four profile sections |
+| `load_wikipedia_info()` | `main.py` | Fetches and combines up to 5 Wikipedia articles |
+| `main()` | `main.py` | Orchestrates input → load → build → invoke |
 
 ## Dependencies
 
@@ -62,7 +71,7 @@ The script will prompt you to enter a person's name, fetch up to 5 Wikipedia art
 
 ```
 langchain-helloworld/
-├── main.py          # Entry point with prompt template and LangChain chain
+├── main.py          # PROMPT_TEMPLATE constant, loader, and main chain logic
 ├── pyproject.toml   # Project metadata and dependencies
 ├── uv.lock          # Locked dependency versions
 └── .env             # API keys (not committed)
