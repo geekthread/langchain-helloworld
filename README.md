@@ -1,20 +1,20 @@
 # LangChain Hello World
 
-A starter project demonstrating how to use [LangChain](https://www.langchain.com/) with OpenAI's GPT models to build prompt-driven AI pipelines in Python.
+A starter project demonstrating how to use [LangChain](https://www.langchain.com/) with OpenAI's GPT models to build an interactive, conversational AI pipeline in Python.
 
 ## Overview
 
-This project builds a minimal LangChain pipeline structured in three clear steps:
+This project builds a multi-turn chat pipeline structured in three layers:
 
 1. **Load** — prompts the user for a name, fetches up to 5 Wikipedia articles, and combines them into a single context string
-2. **Build** — constructs an LCEL chain (`PromptTemplate | ChatOpenAI`) using a module-level prompt template (`PROMPT_TEMPLATE`)
-3. **Invoke** — runs the chain and prints a markdown-formatted profile with four sections:
-   - **Background Summary** — short paragraph on the person's background and interests
-   - **Conversation Topics** — bullet list of relevant topics to discuss
-   - **Questions to Learn More** — bullet list of exploratory questions
-   - **Follow-Up Questions** — bullet list of follow-ups based on likely responses
+2. **Profile** — constructs an LCEL chain (`PromptTemplate | ChatOpenAI`) to generate an initial markdown-formatted profile
+3. **Converse** — enters an interactive loop supporting follow-up questions, new person lookups, and graceful exit
 
-A preview of the raw Wikipedia content (first 2000 chars) is printed before the profile.
+The generated profile has four sections:
+- **Background Summary** — short paragraph on the person's background and interests
+- **Conversation Topics** — bullet list of relevant topics to discuss
+- **Questions to Learn More** — bullet list of exploratory questions
+- **Follow-Up Questions** — bullet list of follow-ups based on likely responses
 
 ## Prerequisites
 
@@ -42,7 +42,36 @@ A preview of the raw Wikipedia content (first 2000 chars) is printed before the 
 uv run main.py
 ```
 
-You will be prompted to enter a person's name. The script will then fetch Wikipedia content, print a preview, and output a structured markdown profile via `gpt-4o-mini`.
+### Interactive commands
+
+| Input | Action |
+|---|---|
+| Any text | Ask a follow-up question about the current person |
+| `new` | Look up a different person (resets conversation) |
+| `exit` / `bye` / `quit` | Exit the program |
+| `Ctrl+C` | Exit the program |
+
+### Example session
+
+```
+Enter a person's name to look up: Elon Musk
+
+--- Wikipedia preview for 'Elon Musk' ---
+...
+
+## 1. Background Summary
+...
+
+You: What companies has he founded?
+Assistant: ...
+
+You: new
+Enter a person's name to look up: Marie Curie
+...
+
+You: bye
+Goodbye!
+```
 
 ## Code Structure
 
@@ -50,7 +79,8 @@ You will be prompted to enter a person's name. The script will then fetch Wikipe
 |---|---|---|
 | `PROMPT_TEMPLATE` | `main.py` (module level) | Markdown prompt defining the four profile sections |
 | `load_wikipedia_info()` | `main.py` | Fetches and combines up to 5 Wikipedia articles |
-| `main()` | `main.py` | Orchestrates input → load → build → invoke |
+| `generate_profile()` | `main.py` | Runs the initial chain and seeds the conversation history |
+| `main()` | `main.py` | Orchestrates the outer (new person) and inner (follow-up) loops |
 
 ## Dependencies
 
@@ -71,7 +101,7 @@ You will be prompted to enter a person's name. The script will then fetch Wikipe
 
 ```
 langchain-helloworld/
-├── main.py          # PROMPT_TEMPLATE constant, loader, and main chain logic
+├── main.py          # PROMPT_TEMPLATE, loader, profile generator, and chat loop
 ├── pyproject.toml   # Project metadata and dependencies
 ├── uv.lock          # Locked dependency versions
 └── .env             # API keys (not committed)

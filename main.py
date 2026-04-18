@@ -5,6 +5,7 @@ Demonstrates a minimal LangChain pipeline:
   1. Define a prompt template with a placeholder variable ({information})
   2. Bind the template to an OpenAI chat model (gpt-4o-mini)
   3. Invoke the chain with real text and print the structured response
+  4. Support follow-up questions, new person lookups, and graceful exit
 
 Environment:
   Requires OPENAI_API_KEY set in a .env file (loaded via python-dotenv).
@@ -15,18 +16,14 @@ Usage:
 
 from dotenv import load_dotenv
 
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import WikipediaLoader
 
-# Load OPENAI_API_KEY (and any other vars) from .env into os.environ
 load_dotenv(override=True)
 
-def load_wikipedia_info(topic: str) -> str:
-    """Load a biography from Wikipedia given a topic string."""
-    loader = WikipediaLoader(query=topic, load_max_docs=5)
-    documents = loader.load()
-    return "\n\n".join(doc.page_content for doc in documents)
+EXIT_KEYWORDS = {"bye", "exit", "quit"}
 
 PROMPT_TEMPLATE = """
 You are a helpful assistant. Using the information below about a person, produce a
@@ -52,22 +49,68 @@ A bullet list of follow-up questions based on likely responses to the questions 
 """
 
 
-def main():
-    print("Hello from langchain-helloworld!")
+def load_wikipedia_info(topic: str) -> str:
+    """Fetch and combine up to 5 Wikipedia articles for the given topic."""
+    loader = WikipediaLoader(query=topic, load_max_docs=5)
+    documents = loader.load()
+    return "\n\n".join(doc.page_content for doc in documents)
 
-    # 1. Get topic and load Wikipedia content
-    topic = input("Enter a person's name to look up: ")
-    information = load_wikipedia_info(topic)
-    print(f"\n--- Wikipedia preview for '{topic}' ---\n{information[:2000]}...\n")
 
-    # 2. Build the LCEL chain: prompt → LLM
+def generate_profile(topic: str, information: str, llm: ChatOpenAI) -> list:
+    """Generate the initial profile and return the seeded conversation history."""
     prompt = PromptTemplate(input_variables=["information"], template=PROMPT_TEMPLATE)
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
     chain = prompt | llm
-
-    # 3. Invoke and print the formatted profile
     response = chain.invoke({"information": information})
     print(response.content)
+
+    # Seed history so follow-ups have full context
+    return [
+        SystemMessage(content=f"You are a helpful assistant. The user is asking about {topic}. "
+                               f"Here is the reference information:\n\n{information}"),
+        HumanMessage(content="Generate a structured profile for this person."),
+        AIMessage(content=response.content),
+    ]
+
+
+def main():
+    print("Hello from langchain-helloworld!")
+    print("Type 'new' to look up a different person, or 'exit'/'bye' to quit.\n")
+
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
+
+    # Outer loop: allows switching to a new person
+    topic = input("Enter a person's name to look up: ").strip()
+    while True:
+        information = load_wikipedia_info(topic)
+        print(f"\n--- Wikipedia preview for '{topic}' ---\n{information[:2000]}...\n")
+
+        history = generate_profile(topic, information, llm)
+
+        # Inner loop: follow-up questions for the current person
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+            except (KeyboardInterrupt, EOFError):
+                print("\nGoodbye!")
+                return
+
+            if not user_input:
+                continue
+
+            if user_input.lower() in EXIT_KEYWORDS:
+                print("Goodbye!")
+                return
+
+            if user_input.lower() == "new":
+                topic = input("Enter a person's name to look up: ").strip()
+                break  # restart outer loop with new topic
+
+            # Follow-up question — send full history + new message
+            history.append(HumanMessage(content=user_input))
+            response = llm.invoke(history)
+            print(f"\nAssistant: {response.content}")
+            history.append(AIMessage(content=response.content))
+
 
 if __name__ == "__main__":
     main()
