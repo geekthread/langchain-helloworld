@@ -4,13 +4,15 @@ A starter project demonstrating how to use [LangChain](https://www.langchain.com
 
 ## Overview
 
-This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain chain that takes biographical information about a person and generates a comprehensive profile including:
+This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain chain that:
 
-- Background summary
-- Conversation topics and questions
-- Recommended resources, activities, and connections
-- Career opportunities and potential challenges
-- Goals, values, personality traits, and communication/learning styles
+1. Prompts the user to enter a person's name
+2. Fetches their biography from Wikipedia via `WikipediaLoader`
+3. Passes the content through a GPT-4o-mini chain to generate a profile including:
+   - Background summary
+   - Relevant conversation topics
+   - Initial questions to learn more about the person
+   - Follow-up questions based on expected responses
 
 ## Prerequisites
 
@@ -38,7 +40,7 @@ This project uses a `PromptTemplate` and `ChatOpenAI` to construct a LangChain c
 uv run main.py
 ```
 
-The script will generate a detailed profile for the sample input (Jeff Bezos) using `gpt-4o-mini`.
+The script will prompt you to enter a person's name, fetch their Wikipedia biography, and generate a structured profile using `gpt-4o-mini`.
 
 ## Dependencies
 
@@ -46,6 +48,7 @@ The script will generate a detailed profile for the sample input (Jeff Bezos) us
 |---|---|
 | `langchain` | Core LangChain framework |
 | `langchain-openai` | OpenAI integration for LangChain |
+| `langchain-community` | Community integrations including `WikipediaLoader` |
 | `langchain-anthropic` | Anthropic/Claude integration |
 | `langchain-google-genai` | Google Gemini integration |
 | `anthropic` | Anthropic SDK |

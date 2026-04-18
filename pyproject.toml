@@ -11,8 +11,10 @@ dependencies = [
     "isort>=8.0.1",
     "langchain>=1.2.12",
     "langchain-anthropic>=1.4.0",
+    "langchain-community>=0.4.1",
     "langchain-google-genai>=4.2.1",
     "langchain-openai>=1.1.11",
     "prettier>=0.0.7",
     "ruff>=0.15.7",
+    "wikipedia>=1.4.0",
 ]
