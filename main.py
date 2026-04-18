@@ -49,6 +49,15 @@ A bullet list of follow-up questions based on likely responses to the questions 
 """
 
 
+def is_person(topic: str, llm: ChatOpenAI) -> bool:
+    """Return True if the input looks like a real person or public personality."""
+    response = llm.invoke([
+        SystemMessage(content="You are a strict classifier. Reply with only 'yes' or 'no'."),
+        HumanMessage(content=f"Is '{topic}' the name of a real person or public personality?"),
+    ])
+    return response.content.strip().lower().startswith("yes")
+
+
 def load_wikipedia_info(topic: str) -> str:
     """Fetch and combine up to 5 Wikipedia articles for the given topic."""
     loader = WikipediaLoader(query=topic, load_max_docs=5)
@@ -73,43 +82,53 @@ def generate_profile(topic: str, information: str, llm: ChatOpenAI) -> list:
 
 
 def main():
-    print("Hello from langchain-helloworld!")
     print("Type 'new' to look up a different person, or 'exit'/'bye' to quit.\n")
 
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
-    # Outer loop: allows switching to a new person
-    topic = input("Enter a person's name to look up: ").strip()
-    while True:
+    def lookup(topic: str) -> tuple[str, list] | None:
+        if not is_person(topic, llm):
+            print(f"'{topic}' doesn't seem to be a person. Please enter a valid name.")
+            return None
         information = load_wikipedia_info(topic)
-        print(f"\n--- Wikipedia preview for '{topic}' ---\n{information[:2000]}...\n")
-
         history = generate_profile(topic, information, llm)
+        return information, history
 
-        # Inner loop: follow-up questions for the current person
-        while True:
-            try:
-                user_input = input("\nYou: ").strip()
-            except (KeyboardInterrupt, EOFError):
-                print("\nGoodbye!")
-                return
+    while True:
+        topic = input("Enter a person's name to look up: ").strip()
+        result = lookup(topic)
+        if result:
+            _, history = result
+            break
 
-            if not user_input:
-                continue
+    while True:
+        try:
+            user_input = input("\nYou: ").strip()
+        except (KeyboardInterrupt, EOFError):
+            print("\nGoodbye!")
+            return
 
-            if user_input.lower() in EXIT_KEYWORDS:
-                print("Goodbye!")
-                return
+        if not user_input:
+            continue
 
-            if user_input.lower() == "new":
+        if user_input.lower() in EXIT_KEYWORDS:
+            print("Goodbye!")
+            return
+
+        if user_input.lower() == "new":
+            while True:
                 topic = input("Enter a person's name to look up: ").strip()
-                break  # restart outer loop with new topic
+                result = lookup(topic)
+                if result:
+                    _, history = result
+                    break
+            continue
 
-            # Follow-up question — send full history + new message
-            history.append(HumanMessage(content=user_input))
-            response = llm.invoke(history)
-            print(f"\nAssistant: {response.content}")
-            history.append(AIMessage(content=response.content))
+        # Follow-up question — send full history + new message
+        history.append(HumanMessage(content=user_input))
+        response = llm.invoke(history)
+        print(f"\nAssistant: {response.content}")
+        history.append(AIMessage(content=response.content))
 
 
 if __name__ == "__main__":

@@ -4,11 +4,12 @@ A starter project demonstrating how to use [LangChain](https://www.langchain.com
 
 ## Overview
 
-This project builds a multi-turn chat pipeline structured in three layers:
+This project builds a multi-turn chat pipeline structured in four layers:
 
-1. **Load** — prompts the user for a name, fetches up to 5 Wikipedia articles, and combines them into a single context string
-2. **Profile** — constructs an LCEL chain (`PromptTemplate | ChatOpenAI`) to generate an initial markdown-formatted profile
-3. **Converse** — enters an interactive loop supporting follow-up questions, new person lookups, and graceful exit
+1. **Validate** — checks via LLM whether the input is a real person or public personality before doing anything else; re-prompts if not
+2. **Load** — fetches up to 5 Wikipedia articles and combines them into a single context string
+3. **Profile** — constructs an LCEL chain (`PromptTemplate | ChatOpenAI`) to generate an initial markdown-formatted profile
+4. **Converse** — enters an interactive loop supporting follow-up questions, new person lookups, and graceful exit
 
 The generated profile has four sections:
 - **Background Summary** — short paragraph on the person's background and interests
@@ -54,6 +55,8 @@ uv run main.py
 ### Example session
 
 ```
+Enter a person's name to look up: XAUUSD
+'XAUUSD' doesn't seem to be a person. Please enter a valid name.
 Enter a person's name to look up: Elon Musk
 
 --- Wikipedia preview for 'Elon Musk' ---
@@ -66,6 +69,8 @@ You: What companies has he founded?
 Assistant: ...
 
 You: new
+Enter a person's name to look up: bye
+'bye' doesn't seem to be a person. Please enter a valid name.
 Enter a person's name to look up: Marie Curie
 ...
 
@@ -78,9 +83,10 @@ Goodbye!
 | Component | Location | Purpose |
 |---|---|---|
 | `PROMPT_TEMPLATE` | `main.py` (module level) | Markdown prompt defining the four profile sections |
+| `is_person()` | `main.py` | LLM-based validator — returns `True` only for real people/personalities |
 | `load_wikipedia_info()` | `main.py` | Fetches and combines up to 5 Wikipedia articles |
 | `generate_profile()` | `main.py` | Runs the initial chain and seeds the conversation history |
-| `main()` | `main.py` | Orchestrates the outer (new person) and inner (follow-up) loops |
+| `main()` | `main.py` | Orchestrates validation, lookup, and the follow-up chat loop |
 
 ## Dependencies
 
